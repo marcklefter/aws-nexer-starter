@@ -95,7 +95,7 @@ In the `modules/api` folder:
 
 In the `modules/validator` folder, add a health check and SIGTERM handling, just like you did for the _TMS API_ service in the previous exercise. 
 
-You can use [Docker Compose](https://docs.docker.com/compose/) to test this interaction locally:
+You can use [Docker Compose](https://docs.docker.com/compose/) to locally test the interaction between the two services:
 
 *   Create a folder named `etc` in the `modules` folder and in it, add a file named `docker-compose-ex2.yaml` with the following:
 
@@ -158,7 +158,7 @@ In this exercise, a [Worker Service](https://aws.github.io/copilot-cli/docs/conc
 
 The _TMS API_ service will be modified to act as the _publisher_ of content requests.
 
-### Worker Service
+### Worker Service (subscriber)
 In `modules/processor`, use the sample code in the [documentation](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#javascript-example_1) as a starting point in (copy and paste it into `src/index.js`).
 
 > Remember to change to your region!
@@ -229,9 +229,9 @@ To test the processor locally:
         };
         ```
 
-*   Run the processor:
+*   Install dependencies and then run the processor:
 
-        npm install
+        npm install @aws-sdk/client-sqs
 
         QUEUE_URI=<queue URI> node src/index.js
         
@@ -284,7 +284,7 @@ In `modules/api`:
     > Hint: The `JSON.parse(process.env.COPILOT_SNS_TOPIC_ARNS)` is already being done in `src/env.js`; change the value of Message to publish from `'hello'` to the newly generated random request ID.
 
 ### Deployment
-In the **project root* folder, deploy the changes to the _TMS API_ service:
+In the **project root** folder, deploy the changes to the _TMS API_ service:
 
     copilot svc deploy --name api
 
