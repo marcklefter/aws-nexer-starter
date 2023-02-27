@@ -302,6 +302,40 @@ After deployment, follow the logs of the `processor` Worker Service in realtime:
 
 When POSTing a new content request, you should see the `processor` Worker Service logging the request ID after a little while.
 
-## Exercise 4: Secrets (and MongoDB).
-In this exercise, integration with MongoDB will be added.
+## Exercise 4: Jobs
+In this exercise, a [Scheduled Job](https://aws.github.io/copilot-cli/docs/concepts/jobs/) (or "job" for short) that acts as a content request _poller_ is created and deployed.
 
+A job is code that runs periodically:
+
+```javascript
+const job = () => {
+    console.log('Running job @ ' + new Date());
+}
+
+job();
+```
+
+In the **project root** folder, create a `Schedule Job`:
+
+    copilot job init --name poller --dockerfile ./modules/poller/Dockerfile
+
+The job should run using a __rate__ of __every three (3) minutes__.
+
+Deploy the job:
+
+    copilot job deploy --name poller
+
+Follow the job's logs to see its "runs":
+
+    copilot job logs --follow
+
+### Retries (Optional)
+A job can fail, e.g. by an uncaught error, but be retried a specified number of times.
+
+Add code to the empty `job` function in `src/index.js` to fail ~ half the times the job is run.
+
+Add `3` [retries](https://aws.github.io/copilot-cli/docs/manifest/scheduled-job/) to the `poller` manifest.
+
+Redeploy the job.
+
+In the AWS Console, navigate to __Step Functions__ and inspect the state machine for the poller; More details about a job's executions (and whether it has failed and retried) can be found under __Logging__.
