@@ -135,7 +135,7 @@ To create and deploy the _TMS Validator_ service, in the **project root** folder
 
         copilot svc deploy -n validator
 
-*   Make the following changes to to _TMS API_:
+*   Make the following changes to _TMS API_:
 
     *   The URL of the _TMS Validator_ service must now be `http://validator.${process.env.COPILOT_SERVICE_DISCOVERY_ENDPOINT}`
 
