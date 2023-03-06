@@ -26,7 +26,7 @@ A Load Balanced Web Service must support _health checks_ and handle shutdowns gr
     process.on('SIGTERM', () => {
       server.close(() => {
         // TBD: Cleanup, e.g. closing the server and various connections.
-        console.log('API server closed);
+        console.log('API server closed');
 
         process.exit(0);
       });
@@ -113,9 +113,9 @@ You can use [Docker Compose](https://docs.docker.com/compose/) to locally test t
 
     > Why aren't `ports` defined for the `validator` service?
 
-*   Launch the two services:
+*   Launch the two services (from the `etc` folder):
 
-        docker compose up --build
+        docker compose -f docker-compose-ex2.yaml up --build
 
 *   In a second terminal window, invoke the API server:
 

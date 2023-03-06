@@ -10,6 +10,6 @@ app.use('/v1', routes);
 
 // ...
 
-const srvd = app.listen(env.port, () => {
+const server = app.listen(env.port, () => {
     console.log(`Listening on port ${env.port}`)
 });
