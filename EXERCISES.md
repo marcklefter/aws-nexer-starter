@@ -1,10 +1,12 @@
 # Exercises
 Description of exercises for the _Translation Management Systems (TMS)_ sample application.
 
+**Make sure to read and follow the instructions for each exercise carefully!**
+
 ## Exercise 1: TMS API 
 In this exercise, an AWS Copilot [Load Balanced Web Service](https://aws.github.io/copilot-cli/docs/concepts/services/#load-balanced-web-service) for the _TMS API_ is created and deployed.
 
-A basic API server exists in `modules/api` with the following endpoints:
+A basic API server exists in `modules/api` with the following endpoints defined in `modules/api/src/routes.js`:
 
     GET   /v1/status/:requestId
     GET   /v1/content/:requestId
@@ -14,9 +16,9 @@ A basic API server exists in `modules/api` with the following endpoints:
 
 A Load Balanced Web Service must support _health checks_ and handle shutdowns gracefully:
 
-*   Add a health check route for `GET /` that responds with 200 OK.
+*   Add a health check route for `GET /` that simply responds with 200 OK.
 
-> Note: In `src/index.js`, add this route just after the `/v1` routes.
+> Note: In `module/api/src/index.js`, add the health check route route _just after mounting the `/v1` routes_.
 
 *   Handle the SIGTERM signal for graceful shutdown:
 
@@ -43,8 +45,7 @@ Test the containerized API server by:
 
         docker run -d -p 80:80 tms-api:v1
 
-*   Verify that the API server works by sending a 
-    request to one of the endpoints.
+*   Verify that the API server works by sending a request to one of the endpoints.
 
 *   Stop the container by running:
 
@@ -52,8 +53,7 @@ Test the containerized API server by:
 
     > Get the CONTAINER_ID via `docker ps`.
 
-*   Check that the API server was shut down 
-    gracefully:
+*   Check that the API server was shut down gracefully:
 
         docker logs <CONTAINER_ID>
 
@@ -62,19 +62,32 @@ Test the containerized API server by:
         docker rm <CONTAINER_ID>
         docker rmi tms-api:v1
 
-Create and deploy a Copilot application named `tms` and add a Load Balanced Web Service (as a first service in the application) by running:
+### Deployment
+Create a Copilot application named `tms` by running:
 
-    copilot init
+    copilot app init
 
 in the **project root folder** and following the instructions.
 
-> Note 1: The name of the _application_ should be `tms`.
+> Note: The name of the _application_ should be `tms`.
 
-> Note 2: The name of the _service_ should be `api`.
+Next, create and deploy a **test** environment for our application:
 
-> Deployment will take a while!
+    copilot env init --name test --profile default
 
-Once deployment has finished, test the API running on AWS by invoking the Load Balancer URL.
+    copilot env deploy --name test
+
+> If using another AWS profile than _default_ when initializing the environment, change accordingly.
+
+Next, create the _TMS API_ service:
+
+    copilot svc init --name api --svc-type "Load Balanced Web Service" --dockerfile modules/api/Dockerfile
+
+Finally, run:
+
+    copilot svc deploy --name api
+
+Test the API running on AWS by invoking the Load Balanced Web Service URL (see the aforementioned API endpoints).
 
 ## Exercise 2: Service-to-Service Communication
 In this exercise, an AWS Copilot [Backend Service](https://aws.github.io/copilot-cli/docs/concepts/services/#backend-service) for the _TMS Validator_ service is created and deployed.
@@ -83,17 +96,13 @@ The _TMS Validator_ service will be invoked directly (synchronously) by the _TMS
 
 In the `modules/api` folder:
 
-*   Install the [superagent](https://ladjs.github.io/superagent/) HTTP client library:
-
-        npm install superagent
-
-*   In the route for `POST /v1/content`, use the `superagent` library to make a POST call to the _TMS Validator_ service.
+*   In the route for `POST /v1/content`, use the `superagent` library - don't forget to `require` (import) it - to make a POST call to the _TMS Validator_ service.
 
     > Note 1: The URL of the _TMS Validator_ service will be: `http://validator`.
 
     > Note 2: Use the [async/await](https://ladjs.github.io/superagent/#promise-and-generator-support) variant of calling `superagent`.
 
-In the `modules/validator` folder, add a health check and SIGTERM handling, just like you did for the _TMS API_ service in the previous exercise. 
+In `modules/validator/src/index.js`, add a health check and SIGTERM handling, just like you did for the _TMS API_ service in the previous exercise. 
 
 You can use [Docker Compose](https://docs.docker.com/compose/) to locally test the interaction between the two services:
 
@@ -129,11 +138,11 @@ To create and deploy the _TMS Validator_ service, in the **project root** folder
 
 *   Create the _TMS Validator_ service:
 
-        copilot svc init --name validator --svc-type "Backend Service" --dockerfile ./modules/validator/Dockerfile 
+        copilot svc init --name validator --svc-type "Backend Service" --dockerfile modules/validator/Dockerfile 
 
 *   Deploy the _TMS Validator_ service:
 
-        copilot svc deploy -n validator
+        copilot svc deploy --name validator
 
 *   Make the following changes to _TMS API_:
 
@@ -141,7 +150,7 @@ To create and deploy the _TMS Validator_ service, in the **project root** folder
 
     *   Deploy the changes:
 
-            copilot svc deploy -n api
+            copilot svc deploy --name api
 
 *   Invoke your updated API server (replace `AWS_URL` with your Load Balanced Web Service URL):
 
@@ -151,25 +160,23 @@ To create and deploy the _TMS Validator_ service, in the **project root** folder
 
 *   Check the logs of the _TMS Validator_ service to see that it's handled a request from _TMS API_:
 
-        copilot svc logs -n validator
+        copilot svc logs --name validator
 
 ## Exercise 3: PubSub
 In this exercise, a [Worker Service](https://aws.github.io/copilot-cli/docs/concepts/services/#worker-service) for processing content requests is created and deployed.
 
 The _TMS API_ service will be modified to act as the _publisher_ of content requests.
 
-### Worker Service (subscriber)
-In `modules/processor`, use the sample code in the [documentation](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#javascript-example_1) as a starting point in (copy and paste it into `src/index.js`).
+### TMS Processor (Worker Service / subscriber)
+The sample code in the [documentation](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#javascript-example_1) illustrates how to implement a SQS subscriber.
 
-> Remember to change to your region!
+> Ensure that you change the region to match yours!
 
-> Notice the `COPILOT_QUEUE_URI` environment variable - this is the address of the queue from which content requests are be consumed and processed (it's also available via `env.queueUrl` - see `src/env.js`).
+> Notice the `COPILOT_QUEUE_URI` environment variable - this is the address of the queue from which content requests are be consumed and processed (it's also available via `env.queueUrl` - see `modules/processor/src/env.js`).
 
-The subscriber sample code currently does not run repeatedly to consume requests from the queue (it does so only once). 
+The sample code in the documentation currently does not run repeatedly to consume requests from the queue (it does so only once). Implement continuous request processing in `modules/processor/src/index.js` as follows:
 
-Implement continuous request processing in `src/index.js`:
-
-*   After creating the SQS `client` object, refactor the sample code by creating the following function called `processor`:
+*   Use the following code as a starting point:
 
     ```
     const client = new SQSClient({ region: "eu-north-1" });
@@ -219,21 +226,13 @@ Implement continuous request processing in `src/index.js`:
 
 To test the processor locally:
 
-*   Create a new SQS queue using the AWS Console.
+*   Create a new SQS queue using the AWS Console; copy the queue URI (referred to as `<MY_QUEUE_URI>` below).
 
-*   Copy the queue URI; in `src/env.js`, add the following:
+*   Run the processor:
 
-        ```
-        module.exports = {
-            queueUrl: process.env.QUEUE_URI ?? queueUrl
-        };
-        ```
+        COPILOT_QUEUE_URI=<MY_QUEUE_URI> node src/index.js
 
-*   Install dependencies and then run the processor:
-
-        npm install @aws-sdk/client-sqs
-
-        QUEUE_URI=<queue URI> node src/index.js
+    > Windows Powershell: `$env:COPILOT_QUEUE_URI="<MY_QUEUE_URI>"`
         
 *   In the AWS Console, send a message to the queue with the following body:
 
@@ -242,19 +241,13 @@ To test the processor locally:
     The processor should log the received message.
 
 ### TMS API (publisher)
-Add the following to `copilot/api/manifest.yml` to allow the _TMS API_ to publish requests to the queue (see more [here](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#sending-messages-from-a-publisher)):
+Modify `copilot/api/manifest.yml` to allow the _TMS API_ to publish requests to the queue (see more [here](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#sending-messages-from-a-publisher)):
 
-    publish:
-        topics:
-            - name: requestsTopic
+> Name your topic __requestsTopic__.
 
 In `modules/api`:
 
-*   Install AWS SNS dependency:
-
-        npm install @aws-sdk/client-sns
-
-*   Modify `src/env.js` to parse and export the name of the topic (also an environment variable):
+*   Modify `modules/api/src/env.js` to parse and export the name of the topic (also an environment variable):
 
         const {
             requestsTopic
@@ -267,21 +260,13 @@ In `modules/api`:
             requestsTopic // <---
         };
 
-*   In `src/routes.js`, for the POST route, publish a request to the queue using the [documentation's sample code](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#javascript-example) as a starting point.
+*   In `modules/api/src/routes.js`, for the POST route, publish a request to the queue using the [documentation's sample code](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#javascript-example) as a starting point.
 
     > Remember to change the SNS client to be your region!
 
-    > Instead of the `Message` being `"hello"`, set it to a randomly generated request ID:
+    > Instead of the `Message` being `"hello"`, set it to a randomly generated request ID; use the built-in [crypto.randomUUID](https://nodejs.org/api/crypto.html#cryptorandomuuidoptions) method for this.
 
-        const crypto = require('crypto');
-        
-        // ...
-        
-        // before publishing a request message, generate a random request ID.
-        const requestId = crypto.randomUUID();
-        
-
-    > Hint: The `JSON.parse(process.env.COPILOT_SNS_TOPIC_ARNS)` is already being done in `src/env.js`; change the value of Message to publish from `'hello'` to the newly generated random request ID.
+    > Note: The `JSON.parse(process.env.COPILOT_SNS_TOPIC_ARNS)` is already being done in `modules/api/src/env.js`; change the value of Message to publish from `'hello'` to the newly generated random request ID.
 
 ### Deployment
 In the **project root** folder, deploy the changes to the _TMS API_ service:
@@ -290,52 +275,155 @@ In the **project root** folder, deploy the changes to the _TMS API_ service:
 
 Add the new `processor` Worker Service:
 
-    copilot svc init --name processor --svc-type "Worker Service" --dockerfile ./modules/processor/Dockerfile
+    copilot svc init --name processor --svc-type "Worker Service" --dockerfile modules/processor/Dockerfile
 
-> Make sure that the suggested `requestsTopic` is selected!
+> Make sure that the suggested `requestsTopic` is selected - marked as [x]!
 
     copilot svc deploy --name processor
 
 After deployment, follow the logs of the `processor` Worker Service in realtime:
 
-    copilot svc logs -n processor --follow
+    copilot svc logs --name processor --follow
 
 When POSTing a new content request, you should see the `processor` Worker Service logging the request ID after a little while.
 
-## Exercise 4: Jobs
-In this exercise, a [Scheduled Job](https://aws.github.io/copilot-cli/docs/concepts/jobs/) (or "job" for short) that acts as a content request _poller_ is created and deployed.
+## Exercise 4: Persistence, Jobs and Secrets
+In this exercise, we'll add:
 
-A job is code that runs periodically:
+*   Persistence of content requests via MongoDB.
+
+*   A [Scheduled Job](https://aws.github.io/copilot-cli/docs/concepts/jobs/) (or "job" for short) for updating content requests.
+
+*   External configuration (via secrets).
+
+> Ensure that a MongoDB database exists with a collection named `content_requests`, and that you've noted the database name and connection string.
+
+### Create Job
+A job is code that runs periodically; for the _TMS Poller_, it looks as follows:
 
 ```javascript
-const job = () => {
-    console.log('Running job @ ' + new Date());
+// modules/poller/src/index.js
+const env = require('./env');
+const dba = require('./db');
+
+const job = async () => {
+    const db = await dba.open(env.dbUrl, env.dbName);
+    await dba.setStatusCompleted(db);
+    await dba.close(); 
 }
 
 job();
 ```
 
-In the **project root** folder, create a `Schedule Job`:
+In the **project root** folder, create a `Scheduled Job`:
 
-    copilot job init --name poller --dockerfile ./modules/poller/Dockerfile
+    copilot job init --name poller --dockerfile modules/poller/Dockerfile
 
-The job should run using a __rate__ of __every three (3) minutes__.
+> Note: Just select a __Fixed Schedule__ of _Hourly_.
 
+As you'll _manually_ run the job, open `copilot/poller/manifest.yml` and change the schedule to:
+
+    on:
+        schedule: "none"
+
+### Environment Variables
+Notice that a database name `env.dbName` and connection string `env.dbUrl` are used to open a connection to the database.
+
+The values are passed to the job via environment variables; export these from `modules/poller/src/env.js`:
+
+```javascript
+const dbUrl 
+    = env.get('DB_URL').required().asString();
+        
+const dbName 
+    = env.get('DB_NAME').required().asString();
+
+modules.exports = {
+    dbName,
+    dbUrl
+};
+```
+
+### External Configuration
+The database name and connecting string are values configured externally and set in the `copilot/poller/manifest.yml`:
+
+`DB_NAME` is set directly as an environment variable in the manifest:
+
+    variables:
+        DB_NAME: <database name>
+
+`DB_URL` is a secret stored in AWS SSM; create a new secret named `dbUrl` with the value set to the connection string:
+
+    copilot secret init
+
+Then add the following to the manifest:
+
+    secrets:                      
+        DB_URL: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/dbUrl
+    
+This becomes the correspondingly named environment variable used in the code.
+
+### Deployment
 Deploy the job:
 
     copilot job deploy --name poller
 
-Follow the job's logs to see its "runs":
+See the job's logs:
 
     copilot job logs --follow
 
-### Retries (Optional)
-A job can fail, e.g. by an uncaught error, but be retried a specified number of times.
+To test the job, create a sample document for a content request in the MongoDB `content_requests` collection:
 
-Add code to the empty `job` function in `src/index.js` to fail ~ half the times the job is run.
+```javascript
+{ 
+    id: "ab86d1f414-9d4d-4bab-8ae3-be30959454b7",
+    status: "pending" 
+}
+```
 
-Add `3` [retries](https://aws.github.io/copilot-cli/docs/manifest/scheduled-job/) to the `poller` manifest.
+Run:
 
-Redeploy the job.
+    copilot job run
 
-In the AWS Console, navigate to __Step Functions__ and inspect the state machine for the poller; More details about a job's executions (and whether it has failed and retried) can be found under __Logging__.
+You should see the status changed to `completed`.
+
+### Update TMS Services (Optional)
+The _TMS API_ and _TMS Processor_ services must be updated to also handle persistence of content requests.
+
+For the _TMS API_:
+
+*   Use the `newContentRequest` database method (see `modules/api/src/db/operations.js`) to create a new content request (before SNS publishing), with the content request ID already being generated.
+
+*   Perform the steps in the section **Environment Variables** above (but in `modules/api/src/env.js`).
+
+*   Update `copilot/api/manifest.yml`:
+
+        variables:
+            DB_NAME: <database name>    
+
+        secrets:                      
+            DB_URL: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/dbUrl
+
+Deploy the updated _TMS API_:
+
+    copilot svc deploy --name api
+
+For the _TMS Processor_:
+
+*   Use the `setStatusPending` database method (see `modules/processor/src/db/operations.js`) to update a content request, with the content request ID received via an SQS message.
+
+*   Perform the steps in the section **Environment Variables** above (but in `modules/processor/src/env.js`).
+
+*   Update `copilot/processor/manifest.yml`:
+
+        variables:
+            DB_NAME: <database name>    
+
+        secrets:                      
+            DB_URL: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/dbUrl
+
+Deploy the updated _TMS Processor_:
+
+    copilot svc deploy --name processor
+
+## Exercise 6: Pipeline

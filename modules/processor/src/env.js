@@ -2,7 +2,7 @@ const env = require('env-var');
 
 // ...
 
-const queueUrl = process.env.COPILOT_QUEUE_URI;
+const queueUrl = env.get('COPILOT_QUEUE_URI').required().asString();
         
 // ...
 
