@@ -3,6 +3,27 @@ Description of exercises for the _Translation Management Systems (TMS)_ sample a
 
 **Make sure to read and follow the instructions for each exercise carefully!**
 
+## Aborting Deployment
+If an error occurs while deploying code with the AWS Copilot CLI, **do not** Ctrl+C to abort the procedure!
+
+E.g., an error might occur while starting up new instances, and Copilot will try up to ten times before aborting, but this takes a significant time.
+
+You can change the state of deployment by setting the number of running instances to zero (and thereby trigger a safe abort) as follows:
+
+*   In the AWS Console, go to **ECS**.
+
+*   Navigate to **Clusters** and choose your cluster.
+
+*   Scroll down to the section named **Services** and select the service that is failing to deploy.
+
+*   On the service page, click on the button **Update service**.
+
+*   In the field **Desired tasks**, specify _0_.
+
+*   Scroll down and click the **Update** button.
+
+After a while, your deployment in the terminal will abort successfully; fix the breaking code and deploy again.
+
 ## Exercise 1: TMS API 
 In this exercise, an AWS Copilot [Load Balanced Web Service](https://aws.github.io/copilot-cli/docs/concepts/services/#load-balanced-web-service) for the _TMS API_ is created and deployed.
 
@@ -170,7 +191,7 @@ The _TMS API_ service will be modified to act as the _publisher_ of content requ
 ### TMS Processor (Worker Service / subscriber)
 The sample code in the [documentation](https://aws.github.io/copilot-cli/docs/developing/publish-subscribe/#javascript-example_1) illustrates how to implement a SQS subscriber.
 
-> Ensure that you change the region to match yours!
+> Make sure you change the region to match yours!
 
 > Notice the `COPILOT_QUEUE_URI` environment variable - this is the address of the queue from which content requests are be consumed and processed (it's also available via `env.queueUrl` - see `modules/processor/src/env.js`).
 
@@ -427,3 +448,33 @@ Deploy the updated _TMS Processor_:
     copilot svc deploy --name processor
 
 ## Exercise 6: Pipeline
+In this exercise, you will create an automated [pipeline](https://aws.github.io/copilot-cli/docs/concepts/pipelines/) to build and deploy services to your _test_ environment.
+
+In the **project root**, run:
+
+    copilot pipeline init --name tms-pipeline
+
+> Choose **Workloads** as the pipeline type, and **test** for your environment.
+
+Commit and push the changes (a `copilot/pipelines` folder has been added) to the repo.
+
+Run:
+
+    copilot pipeline deploy
+
+The connection between AWS and Github needs to be completed:
+
+*   Navigate to https://console.aws.amazon.com/codesuite/settings/connections
+
+*   Click "Update pending connection" and follow the steps.
+
+To test the pipeline, make a change to a source file in any of the modules, then commit and push the change; to follow the pipeline status, run:
+
+    copilot pipeline status
+
+You can also follow the progress in the AWS Console, go to **CodePipeline**.
+
+## Cleanup
+When finished with the exercise, remove the application and all deployed resources by running the following in the **project root**:
+
+    copilot app delete
