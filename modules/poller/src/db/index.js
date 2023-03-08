@@ -7,30 +7,42 @@ const operations = require('./operations');
 
 // ...
 
-let client;
+let dbClient;
 
-const open = async (dbUrl, dbName) => {
-  if (!client) {
-    client = await new MongoClient(
-      dbUrl, 
-      { 
-          useNewUrlParser: true, 
-          useUnifiedTopology: true, 
-          serverApi: ServerApiVersion.v1 
-      }
-    ).connect();
+let dbName;
+let dbConnected;
+
+const init = (dbUrl, _dbName) => {
+  dbClient = new MongoClient(
+    dbUrl, 
+    { 
+        useNewUrlParser: true, 
+        useUnifiedTopology: true, 
+        serverApi: ServerApiVersion.v1 
+    }
+  );
+
+  dbName = _dbName;
+}
+
+const open = async () => {
+  if (!dbConnected) {
+    await dbClient.connect();
+
+    dbConnected = true;
   }
       
-  return client.db(dbName);
+  return dbClient.db(dbName);
 } 
 
 const close = () => {
-  return client.close();
+  return dbClient.close();
 }
 
 // ...
 
 module.exports = {
+  init,
   open,
   close,
 
