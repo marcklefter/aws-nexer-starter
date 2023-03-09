@@ -84,7 +84,7 @@ Test the containerized API server by:
         docker rmi tms-api:v1
 
 ### Deployment
-Create a Copilot application named `tms` by running:
+Create a Copilot application by running:
 
     copilot app init
 
@@ -94,11 +94,11 @@ in the **project root folder** and following the instructions.
 
 Next, create and deploy a **test** environment for our application:
 
-    copilot env init --name test --profile default
+    copilot env init --name test
+
+> Select your _default_ AWS profile when prompted.
 
     copilot env deploy --name test
-
-> If using another AWS profile than _default_ when initializing the environment, change accordingly.
 
 Next, create the _TMS API_ service:
 
@@ -327,8 +327,10 @@ A job is code that runs periodically; for the _TMS Poller_, it looks as follows:
 const env = require('./env');
 const dba = require('./db');
 
+dba.init(env.dbUrl, env.dbName);
+
 const job = async () => {
-    const db = await dba.open(env.dbUrl, env.dbName);
+    const db = await dba.open();
     await dba.setStatusCompleted(db);
     await dba.close(); 
 }
