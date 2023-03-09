@@ -117,7 +117,7 @@ Currently, the API is only supported by a single instance, and therefore incomin
 
 Send a number of requests to (= "load test") the Load Balanced Web Service URL and then study the resulting metrics for in the AWS Console under **ECS** - is your traffic being load balanced across the two service instances?
 
-> [Here](https://gist.github.com/Buthrakaur/376e0c05729ac6969e93) is a gist for Powershell script you can adapt for sending repeated requests. 
+> [Here](https://gist.github.com/Buthrakaur/376e0c05729ac6969e93) is a gist for a Powershell script you can adapt for sending repeated requests. 
 
 ## Exercise 2: Service-to-Service Communication
 In this exercise, an AWS Copilot [Backend Service](https://aws.github.io/copilot-cli/docs/concepts/services/#backend-service) for the _TMS Validator_ service is created and deployed.
