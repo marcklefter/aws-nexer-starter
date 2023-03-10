@@ -260,6 +260,8 @@ To test the processor locally:
 
 *   Run the processor:
 
+        npm install
+
         COPILOT_QUEUE_URI=<MY_QUEUE_URI> node src/index.js
 
     > Windows Powershell: `$env:COPILOT_QUEUE_URI="<MY_QUEUE_URI>"`
@@ -370,7 +372,7 @@ const dbUrl
 const dbName 
     = env.get('DB_NAME').required().asString();
 
-modules.exports = {
+module.exports = {
     dbName,
     dbUrl
 };
@@ -458,7 +460,7 @@ Deploy the updated _TMS Processor_:
 
     copilot svc deploy --name processor
 
-## Exercise 6: Pipeline
+## Exercise 5: Pipeline
 In this exercise, you will create an automated [pipeline](https://aws.github.io/copilot-cli/docs/concepts/pipelines/) to build and deploy services to your _test_ environment.
 
 In the **project root**, run:

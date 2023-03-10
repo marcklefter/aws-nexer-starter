@@ -1,4 +1,4 @@
-export const setStatusPending = (db, requestId) => {
+const setStatusPending = (db, requestId) => {
   return db.collection('content_requests').updateOne(
     {
       requestId
@@ -9,4 +9,8 @@ export const setStatusPending = (db, requestId) => {
       }
     }
   );
-}
+};
+
+module.exports = {
+  setStatusPending
+};
